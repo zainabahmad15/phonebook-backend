@@ -14,6 +14,9 @@ app.use(express.json())
 //using cors
 app.use(cors())
 
+//to check if the build directory contains a file corresponding to the request's address.
+app.use(express.static('build'))
+
 //using morgan
 morgan.token('body', (request, response) => request.method === 'POST' ? JSON.stringify(request.body) : ' ')
 
