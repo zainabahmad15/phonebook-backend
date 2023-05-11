@@ -1,5 +1,11 @@
+
+require('dotenv').config()
 //importing express 
 const express = require('express')
+// using express function to create express app
+const app = express()
+// import model
+const Person = require('./models/person')
 
 // importing morgan - middle ware
 const morgan = require('morgan')
@@ -7,8 +13,7 @@ const morgan = require('morgan')
 // importing cors - Cross-Origin Resource Sharing
 const cors = require('cors')
 
-// using express function to create express app
-const app = express()
+
 //json parser
 app.use(express.json())
 //using cors
@@ -58,8 +63,14 @@ let persons = [
 ]
 
 app.get('/api/persons', (request, response) => {
-    response.json(persons)
+    Person.find({}).then(persons => {
+        response.json(persons)
+    })
 })
+
+// app.get('/api/persons', (request, response) => {
+//     response.json(persons)
+// })
 
 app.get('/info', (request, response) => {
     const text =
@@ -69,17 +80,22 @@ app.get('/info', (request, response) => {
 })
 
 //fetchig a single resource 
+// app.get('/api/persons/:id', (request, response) => {
+//     const id = Number(request.params.id) //request object
+//     const person = persons.find(person => person.id === id)
+
+//     if (person) {
+//         response.json(person)
+//     } else {
+//         response.status(404).end()
+//     }
+//     //response.json(note)
+// })
+
 app.get('/api/persons/:id', (request, response) => {
-    const id = Number(request.params.id) //request object
-    const person = persons.find(person => person.id === id)
-
-    if (person) {
+    Person.findById(request.params.id).then(person => {
         response.json(person)
-    } else {
-        response.status(404).end()
-    }
-
-    //response.json(note)
+    })
 })
 
 //deleteing resources 
@@ -91,15 +107,20 @@ app.delete('/api/persons/:id', (request, response) => {
 })
 
 // new entries
-const generateId = () => {
-    const maxId = persons.length > 0
-        ? Math.max(...persons.map(n => n.id))
-        : 0
-    return maxId + 1
-}
+// const generateId = () => {
+//     const maxId = persons.length > 0
+//         ? Math.max(...persons.map(n => n.id))
+//         : 0
+//     return maxId + 1
+// }
 
 app.post('/api/persons', (request, response) => {
     const body = request.body
+
+    if (body.content === undefined) {
+        return response.status(400).json({ error: 'content missing' })
+    }
+
 
     if (!request.body.number) {
         return response.status(400).json({
@@ -116,13 +137,27 @@ app.post('/api/persons', (request, response) => {
         })
     }
 
-    const person = {
-        id: generateId(),
-        name: request.body.name,
-        number: request.body.number
-    }
+    // const person = {
+    //     id: generateId(),
+    //     name: request.body.name,
+    //     number: request.body.number
+    // }
+
+    const person = new Person({
+        name: process.argv[3],
+        number: process.argv[4],
+    })
 
     persons = persons.concat(person)
+
+    // persons.save().then(person => {
+    //     response.json(person)
+    // })
+
+    person.save().then(result => {
+        console.log(`added ${person.name} ${person.number} to phonebook`)
+        mongoose.connection.close()
+    })
 
     response.json(person)
 })
