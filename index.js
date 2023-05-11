@@ -1,9 +1,10 @@
-
-require('dotenv').config()
 //importing express 
 const express = require('express')
 // using express function to create express app
 const app = express()
+// import .env file
+require('dotenv').config()
+
 // import model
 const Person = require('./models/person')
 
@@ -13,12 +14,18 @@ const morgan = require('morgan')
 // importing cors - Cross-Origin Resource Sharing
 const cors = require('cors')
 
-
-//json parser
-app.use(express.json())
+const requestLogger = (request, response, next) => {
+    console.log('Method:', request.method)
+    console.log('Path:  ', request.path)
+    console.log('Body:  ', request.body)
+    console.log('---')
+    next()
+}
 //using cors
 app.use(cors())
-
+//json parser
+app.use(express.json())
+app.use(requestLogger)
 //to check if the build directory contains a file corresponding to the request's address.
 app.use(express.static('build'))
 
@@ -40,27 +47,31 @@ app.use(morgan((tokens, request, response) => [
 const http = require('http')
 
 let persons = [
-    {
-        "id": 1,
-        "name": "Arto Hellas",
-        "number": "040-123456"
-    },
-    {
-        "id": 2,
-        "name": "Ada Lovelace",
-        "number": "39-44-5323523"
-    },
-    {
-        "id": 3,
-        "name": "Dan Abramov",
-        "number": "12-43-234345"
-    },
-    {
-        "id": 4,
-        "name": "Mary Poppendieck",
-        "number": "39-23-6423122"
-    }
+    // {
+    //     "id": 1,
+    //     "name": "Arto Hellas",
+    //     "number": "040-123456"
+    // },
+    // {
+    //     "id": 2,
+    //     "name": "Ada Lovelace",
+    //     "number": "39-44-5323523"
+    // },
+    // {
+    //     "id": 3,
+    //     "name": "Dan Abramov",
+    //     "number": "12-43-234345"
+    // },
+    // {
+    //     "id": 4,
+    //     "name": "Mary Poppendieck",
+    //     "number": "39-23-6423122"
+    // }
 ]
+
+const unknownEndpoint = (request, response) => {
+    response.status(404).send({ error: 'unknown endpoint' })
+}
 
 app.get('/api/persons', (request, response) => {
     Person.find({}).then(persons => {
@@ -71,6 +82,7 @@ app.get('/api/persons', (request, response) => {
 // app.get('/api/persons', (request, response) => {
 //     response.json(persons)
 // })
+
 
 app.get('/info', (request, response) => {
     const text =
@@ -106,25 +118,31 @@ app.delete('/api/persons/:id', (request, response) => {
     response.status(204).end()
 })
 
-// new entries
-// const generateId = () => {
-//     const maxId = persons.length > 0
-//         ? Math.max(...persons.map(n => n.id))
-//         : 0
-//     return maxId + 1
-// }
+//new entries
+const generateId = () => {
+    const maxId = persons.length > 0
+        ? Math.max(...persons.map(n => n.id))
+        : 0
+    return maxId + 1
+}
 
 app.post('/api/persons', (request, response) => {
     const body = request.body
 
-    if (body.content === undefined) {
-        return response.status(400).json({ error: 'content missing' })
-    }
+    // if (body.name === undefined) {
+    //     return response.status(400).json({ error: 'content missing' })
+    // }
+
+    const person = new Person({
+        id: generateId(),
+        name: request.body.name,
+        number: request.body.number
+    })
 
 
     if (!request.body.number) {
         return response.status(400).json({
-            error: 'numebr missing'
+            error: 'number missing'
         })
     }
 
@@ -137,32 +155,21 @@ app.post('/api/persons', (request, response) => {
         })
     }
 
-    // const person = {
-    //     id: generateId(),
-    //     name: request.body.name,
-    //     number: request.body.number
-    // }
-
-    const person = new Person({
-        name: process.argv[3],
-        number: process.argv[4],
-    })
-
     persons = persons.concat(person)
 
     // persons.save().then(person => {
     //     response.json(person)
     // })
 
-    person.save().then(result => {
+    person.save().then(person => {
         console.log(`added ${person.name} ${person.number} to phonebook`)
-        mongoose.connection.close()
+        response.json(person)
+        //mongoose.connection.close()
     })
-
-    response.json(person)
 })
 
 
+app.use(unknownEndpoint)
 
 // const PORT = 3001
 // app.listen(PORT) //binded app to the port 
