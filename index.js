@@ -1,3 +1,4 @@
+const mongoose = require('mongoose')
 //importing express 
 const express = require('express')
 // using express function to create express app
@@ -82,12 +83,21 @@ app.get('/api/persons', (request, response) => {
 // })
 
 
-app.get('/info', (request, response) => {
-    const text =
-        `<p>Phonebook has info for ${persons.length} peopnle </p>
-        <p> ${new Date()}</p>`
-    response.send(text)
+// app.get('/info', (request, response) => {
+//     const text =
+//         `<p>Phonebook has info for ${persons.length} peopnle </p>
+//         <p> ${new Date()}</p>`
+//     response.send(text)
+// })
+
+app.get('/info', (request, response, next) => {
+    const date = new Date().toString()
+    Person.find({}).then(person => {
+        response.send(`<p>Phonebook has info for ${person.length} people</p> <p>${date}</p>`)
+    })
+        .catch(error => { next(error) })
 })
+
 
 //fetchig a single resource 
 // app.get('/api/persons/:id', (request, response) => {
@@ -109,7 +119,7 @@ app.get('/info', (request, response) => {
 // })
 
 // added error handling 
-app.get('/api/persons/:id', (request, response) => {
+app.get('/api/persons/:id', (request, response, next) => {
     Person.findById(request.params.id)
         .then(person => {
             if (person) {
@@ -136,7 +146,14 @@ app.get('/api/persons/:id', (request, response) => {
 
 //usign the findbyidandremove fucntion
 app.delete('/api/persons/:id', (request, response, next) => {
-    Person.findByIdAndRemove(request.params.id)
+    const id = request.params.id
+
+    console.log(id)
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+        return response.status(400).send({ error: 'Invalid id' });
+    }
+
+    Person.findByIdAndRemove(id)
         .then(result => {
             response.status(204).end()
         })
@@ -145,12 +162,12 @@ app.delete('/api/persons/:id', (request, response, next) => {
 
 
 //new entries
-const generateId = () => {
-    const maxId = persons.length > 0
-        ? Math.max(...persons.map(n => n.id))
-        : 0
-    return maxId + 1
-}
+// const generateId = () => {
+//     const maxId = persons.length > 0
+//         ? Math.max(...persons.map(n => n.id))
+//         : 0
+//     return maxId + 1
+// }
 
 app.post('/api/persons', (request, response) => {
     const body = request.body
@@ -160,7 +177,6 @@ app.post('/api/persons', (request, response) => {
     // }
 
     const person = new Person({
-        id: generateId(),
         name: request.body.name,
         number: request.body.number
     })
@@ -193,6 +209,24 @@ app.post('/api/persons', (request, response) => {
         //mongoose.connection.close()
     })
 })
+
+
+app.put('/api/persons/:id', (request, response, next) => {
+    const body = request.body
+
+    const person = {
+        name: body.name,
+        number: body.number,
+    }
+
+    Person.findByIdAndUpdate(request.params.id, person, { new: true })
+        .then(updatedPerson => {
+            response.json(updatedPerson.toJSON())
+        })
+        .catch(error => next(error))
+})
+
+
 
 const unknownEndpoint = (request, response) => {
     response.status(404).send({ error: 'unknown endpoint' })
