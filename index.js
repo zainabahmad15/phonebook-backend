@@ -150,7 +150,7 @@ app.delete('/api/persons/:id', (request, response, next) => {
 
     console.log(id)
     if (!mongoose.Types.ObjectId.isValid(id)) {
-        return response.status(400).send({ error: 'Invalid id' });
+        return response.status(400).send({ error: 'Invalid id' })
     }
 
     Person.findByIdAndRemove(id)
