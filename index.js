@@ -1,5 +1,5 @@
 const mongoose = require('mongoose')
-//importing express 
+//importing express
 const express = require('express')
 // using express function to create express app
 const app = express()
@@ -44,9 +44,9 @@ app.use(morgan((tokens, request, response) => [
 ].join('')))
 
 
-//import node's built in web server module 
+//import node's built in web server module
 // same as import http from 'http'
-const http = require('http')
+//const http = require('http')
 
 let persons = [
     // {
@@ -99,7 +99,7 @@ app.get('/info', (request, response, next) => {
 })
 
 
-//fetchig a single resource 
+//fetchig a single resource
 // app.get('/api/persons/:id', (request, response) => {
 //     const id = Number(request.params.id) //request object
 //     const person = persons.find(person => person.id === id)
@@ -118,7 +118,7 @@ app.get('/info', (request, response, next) => {
 //     })
 // })
 
-// added error handling 
+// added error handling
 app.get('/api/persons/:id', (request, response, next) => {
     Person.findById(request.params.id)
         .then(person => {
@@ -136,7 +136,7 @@ app.get('/api/persons/:id', (request, response, next) => {
         .catch(error => next(error))
 })
 
-//deleteing resources 
+//deleteing resources
 // app.delete('/api/persons/:id', (request, response) => {
 //     const id = Number(request.params.id)
 //     persons = persons.filter(person => person.id !== id)
@@ -156,6 +156,7 @@ app.delete('/api/persons/:id', (request, response, next) => {
     Person.findByIdAndRemove(id)
         .then(result => {
             response.status(204).end()
+            console.log(result)
         })
         .catch(error => next(error))
 })
@@ -170,7 +171,7 @@ app.delete('/api/persons/:id', (request, response, next) => {
 // }
 
 app.post('/api/persons', (request, response) => {
-    const body = request.body
+    //const body = request.body
 
     // if (body.name === undefined) {
     //     return response.status(400).json({ error: 'content missing' })
@@ -188,7 +189,7 @@ app.post('/api/persons', (request, response) => {
         })
     }
 
-    // see if person is already added to phonebook 
+    // see if person is already added to phonebook
     const foundPerson = persons.find(person => person.name === request.body.name)
 
     if (foundPerson) {
